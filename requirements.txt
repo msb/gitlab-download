@@ -1,0 +1,6 @@
+ipython
+python-gitlab
+fs.dropboxfs
+fs.onedrivefs
+google-auth-httplib2
+google-auth-oauthlib

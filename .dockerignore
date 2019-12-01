@@ -1,0 +1,9 @@
+.dockerignore
+Dockerfile
+__pycache__
+*.pyc
+*.env
+*.json
+.tox
+.git
+.flake8
