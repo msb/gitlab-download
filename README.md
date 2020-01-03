@@ -20,14 +20,14 @@ Then running the following docker command will output the script to the current 
 docker run --rm \
   --env-file gitlabdownload.env \
   --user $(id -u):$(id -g) --volume "$PWD:/data" \
-  msb140610/gitlab-download:1
+  msb140610/gitlab-download:2
 ```
 
 The script uses [PyFilesystem](https://github.com/pyfilesystem/pyfilesystem2) to write to the
 output path so the script can be configured to write to any file system supported by PyFilesystem
 which could be useful if you aren't running docker locally. The container has been configured with
 the `fs.dropboxfs` and  `fs.onedrivefs` third party file systems and a 
-[custom WIP version of `fs.googledrivefs`](https://github.com/msb/fs.googledrivefs/tree/support_for_service_accounts).
+[custom WIP version of `fs.googledrivefs`](https://github.com/msb/fs.googledrivefs/tree/file_id_support).
 
 ### Configuring the output path with fs.googledrivefs
 
@@ -45,18 +45,17 @@ with permission on the target directory. The set up steps are sketched as follow
 Then update the `gitlabdownload.env` file with the following variables:
 
 ```
-OUTPUT_PATH=googledrive:///id|[the id of the target GDrive folder]
-
-GDRIVE_SERVICE_ACCOUNT_PRIVATE_KEY=[private_key from the credential file]
-GDRIVE_SERVICE_ACCOUNT_CLIENT_EMAIL=[client_email from the credential file]
-GDRIVE_SERVICE_ACCOUNT_TOKEN_URI=[token_uri from the credential file]
+OUTPUT_PATH=googledrive:///{the id of the target GDrive folder}?service_account_credentials_file=%2Fcredentials_file.json
 ```
 
 Finally, run the container and the generated script with be written to the target GDrive folder
 with no need for a bind volume.
 
 ```bash
-docker run --rm --env-file gitlabdownload.env msb140610/gitlab-download:1
+docker run --rm --env-file gitlabdownload.env \
+  --volume [path/to/credentials]:/credentials_file.json \
+  msb140610/gitlab-download:2
+
 ```
 
 This is quite a lot of effort for a fairly trivial script but it was a learning exercise and quite
@@ -75,17 +74,17 @@ script can be from the local project using a bind volume as follows:
 docker run --rm \
   --env-file gitlabdownload.env \
   --volume "$PWD:/app" \
-  msb140610/gitlab-download:1
+  msb140610/gitlab-download:2
 ```
 Also the container has been configured with `ipython` if you wish to experiment with the gitlab
 or PyFilesystem libraries as follows:
 
 ```bash
-docker run --rm \
+docker run --rm -it \
   --env-file gitlabdownload.env \
   --volume "$PWD:/app" \
   --entrypoint ipython \
-  msb140610/gitlab-download:1
+  msb140610/gitlab-download:2
 ```
 
 If the container configuration needs changing, it can be built for testing locally as follows:
