@@ -1,3 +1,7 @@
+npm install package-info
+(async () => {
+    console.log(await info('@ucam.uis.devops/choose-columns-dialog'));
+})();
 
 This is a containerised script that iterates over a tree of gitlab projects and generates a bash 
 script that either clones the projects if they don't exist or pulls the project, if it does. The
@@ -10,24 +14,23 @@ variables:
 GITLAB_URL=[the host name for gitlab]
 GITLAB_PRIVATE_TOKEN=[a gitlab personal access token]
 GITLAB_GROUP_PATH=[the path of the group to download]
-
-OUTPUT_PATH=osfs:///data
 ```
 
 Then running the following docker command will output the script to the current working directory:
 
 ```bash
+export VERSION=1.0
+
 docker run --rm \
   --env-file gitlabdownload.env \
   --user $(id -u):$(id -g) --volume "$PWD:/data" \
-  msb140610/gitlab-download:2
+  msb140610/gitlab-download:$VERSION
 ```
 
 The script uses [PyFilesystem](https://github.com/pyfilesystem/pyfilesystem2) to write to the
 output path so the script can be configured to write to any file system supported by PyFilesystem
 which could be useful if you aren't running docker locally. The container has been configured with
-the `fs.dropboxfs` and  `fs.onedrivefs` third party file systems and a 
-[custom WIP version of `fs.googledrivefs`](https://github.com/msb/fs.googledrivefs/tree/file_id_support).
+the `fs.dropboxfs`, `fs.onedrivefs`, & `fs.googledrivefs`.
 
 ### Configuring the output path with fs.googledrivefs
 
@@ -45,7 +48,9 @@ with permission on the target directory. The set up steps are sketched as follow
 Then update the `gitlabdownload.env` file with the following variables:
 
 ```
-OUTPUT_PATH=googledrive:///{the id of the target GDrive folder}?service_account_credentials_file=%2Fcredentials_file.json
+GOOGLE_APPLICATION_CREDENTIALS=/credentials.json
+OUTPUT_PATH=googledrive:///?root_id={the id of the target GDrive folder}
+# the default for OUTPUT_PATH is: osfs:///data
 ```
 
 Finally, run the container and the generated script with be written to the target GDrive folder
@@ -53,16 +58,12 @@ with no need for a bind volume.
 
 ```bash
 docker run --rm --env-file gitlabdownload.env \
-  --volume [path/to/credentials]:/credentials_file.json \
-  msb140610/gitlab-download:2
-
+  --volume [path/to/credentials]:/credentials.json \
+  msb140610/gitlab-download:$VERSION
 ```
 
-This is quite a lot of effort for a fairly trivial script but it was a learning exercise and quite
+This is quite a lot of effort for a trivial script but it was a learning exercise and quite
 helpful in understanding PyFilesystem and the GDrive API. 
-
-It is also noted that the customisation of fs.googledrivefs is fairly hacky at the moment and I
-hope to tidy it up in the future.
 
 ### Development
 
@@ -74,7 +75,7 @@ script can be from the local project using a bind volume as follows:
 docker run --rm \
   --env-file gitlabdownload.env \
   --volume "$PWD:/app" \
-  msb140610/gitlab-download:2
+  msb140610/gitlab-download:$VERSION
 ```
 Also the container has been configured with `ipython` if you wish to experiment with the gitlab
 or PyFilesystem libraries as follows:
@@ -84,7 +85,7 @@ docker run --rm -it \
   --env-file gitlabdownload.env \
   --volume "$PWD:/app" \
   --entrypoint ipython \
-  msb140610/gitlab-download:2
+  msb140610/gitlab-download:$VERSION
 ```
 
 If the container configuration needs changing, it can be built for testing locally as follows:

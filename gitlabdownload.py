@@ -25,9 +25,11 @@ def main():
 
     script_name = os.environ.get('SCRIPT_NAME', 'gitlab-download.sh')
 
-    with open_fs('mem://') as output_path:
-        output_path.writetext(script_name, f'# generated: {datetime.datetime.now()}\n')
-        output_path.appendtext(
+    output_path = os.environ.get('OUTPUT_PATH', 'osfs:///data')
+
+    with open_fs('mem://') as output_cache:
+        output_cache.writetext(script_name, f'# generated: {datetime.datetime.now()}\n')
+        output_cache.appendtext(
             script_name,
             'clone_or_pull() {\n'
             'if [ -e "$1" ]; then\necho $1\ngit -C $1 pull\nelse\ngit clone $2 $1\nfi\n}\n'
@@ -37,12 +39,12 @@ def main():
                 LOGGER.info(group.name)
                 for project in group.projects.list(all=True):
                     if project.repository_access_level != 'disabled':
-                        output_path.appendtext(script_name, (
+                        output_cache.appendtext(script_name, (
                             f'clone_or_pull '
                             f'{project.path_with_namespace} {project.ssh_url_to_repo}\n'
                         ))
 
-        copy_file(output_path, script_name, os.environ['OUTPUT_PATH'], script_name)
+        copy_file(output_cache, script_name, output_path, script_name)
 
 
 if __name__ == "__main__":
